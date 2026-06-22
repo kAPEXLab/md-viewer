@@ -16,6 +16,20 @@
       color: #24292f;
     }
 
+    .header-logo {
+      text-align: center;
+      background: #ffffff;
+      padding: 16px 0;
+      border-bottom: 1px solid #d0d7de;
+    }
+
+    .header-logo img {
+      max-width: 95%;
+      width: 1000px;
+      height: auto;
+      display: inline-block;
+    }
+
     .container {
       width: 90%;
       max-width: 1000px;
@@ -105,10 +119,32 @@
 
     a {
       color: #0969da;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    ul, ol {
+      padding-left: 24px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #d0d7de;
+      margin: 24px 0;
     }
   </style>
 </head>
 <body>
+  <div class="header-logo">
+    <img
+      src="https://raw.githubusercontent.com/kAPEXLab/logos_and_headers/main/Email-Apex%20Lab-KPIT-APRIL2026.jpg"
+      alt="Apex Lab Header"
+    />
+  </div>
+
   <div class="container">
     <div id="content">
       <div class="message">Loading content...</div>
@@ -134,7 +170,7 @@
 
     async function loadMarkdownFromLinkFile() {
       try {
-        // Step 1: Read link.txt from same repo/site
+        // Read link.txt from same repo
         const linkResponse = await fetch("./link.txt");
 
         if (!linkResponse.ok) {
@@ -144,11 +180,11 @@
         const mdUrlText = await linkResponse.text();
         const mdUrl = convertToRaw(mdUrlText);
 
-        if (!mdUrl) {
+        if (!mdUrl || mdUrl.trim() === "") {
           throw new Error("link.txt is empty");
         }
 
-        // Step 2: Fetch markdown file
+        // Fetch markdown file
         const mdResponse = await fetch(mdUrl);
 
         if (!mdResponse.ok) {
@@ -157,10 +193,10 @@
 
         const markdown = await mdResponse.text();
 
-        // Step 3: Render markdown
+        // Render markdown
         contentDiv.innerHTML = marked.parse(markdown);
 
-        // Optional: use first H1 as page title
+        // Set page title from first H1 if available
         const match = markdown.match(/^#\s+(.+)$/m);
         if (match && match[1]) {
           document.title = match[1].trim();
@@ -177,6 +213,7 @@
             </ul>
           </div>
         `;
+        console.error(error);
       }
     }
 
