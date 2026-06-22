@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Markdown Viewer</title>
 
-  <!-- Prevent browser caching -->
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="pragma" content="no-cache" />
   <meta http-equiv="expires" content="0" />
 
-  <!-- Marked.js -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
@@ -41,6 +39,16 @@
       margin: 24px auto;
     }
 
+    #debug {
+      background: #fff8c5;
+      border: 1px solid #eac54f;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
     #content {
       background: #ffffff;
       padding: 28px;
@@ -48,13 +56,6 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       line-height: 1.7;
       overflow-x: auto;
-    }
-
-    .message {
-      background: #fff8c5;
-      border: 1px solid #eac54f;
-      padding: 14px;
-      border-radius: 8px;
     }
 
     .error {
@@ -154,13 +155,21 @@
   </div>
 
   <div class="container">
+    <div id="debug">Debug info will appear here...</div>
+
     <div id="content">
-      <div class="message">Loading content...</div>
+      Loading content...
     </div>
   </div>
 
   <script>
     const contentDiv = document.getElementById("content");
+    const debugDiv = document.getElementById("debug");
+
+    function log(msg) {
+      debugDiv.textContent += "\n" + msg;
+      console.log(msg);
+    }
 
     function convertToRaw(url) {
       if (!url) return url;
@@ -177,19 +186,31 @@
 
     async function loadMarkdownFromConfigRepo() {
       try {
+        debugDiv.textContent = "Starting debug...";
+
         const linkFileUrl =
           "https://raw.githubusercontent.com/kAPEXLab/md-config/main/link.txt?v=" + Date.now();
+
+        log("Fetching link.txt from:");
+        log(linkFileUrl);
 
         const linkResponse = await fetch(linkFileUrl, {
           cache: "no-store"
         });
+
+        log("link.txt status: " + linkResponse.status);
 
         if (!linkResponse.ok) {
           throw new Error("Unable to read link.txt from md-config repo");
         }
 
         const mdUrlText = (await linkResponse.text()).trim();
+        log("link.txt content:");
+        log(mdUrlText);
+
         const mdUrl = convertToRaw(mdUrlText);
+        log("Converted markdown URL:");
+        log(mdUrl);
 
         if (!mdUrl) {
           throw new Error("link.txt is empty");
@@ -198,15 +219,21 @@
         const separator = mdUrl.includes("?") ? "&" : "?";
         const freshMdUrl = mdUrl + separator + "v=" + Date.now();
 
+        log("Fetching markdown from:");
+        log(freshMdUrl);
+
         const mdResponse = await fetch(freshMdUrl, {
           cache: "no-store"
         });
+
+        log("Markdown fetch status: " + mdResponse.status);
 
         if (!mdResponse.ok) {
           throw new Error("Unable to fetch markdown file");
         }
 
         const markdown = await mdResponse.text();
+        log("Markdown fetched successfully. Length: " + markdown.length);
 
         contentDiv.innerHTML = marked.parse(markdown);
 
@@ -215,15 +242,11 @@
           document.title = match[1].trim();
         }
       } catch (error) {
+        log("ERROR: " + error.message);
         contentDiv.innerHTML = `
           <div class="error">
             <strong>Error loading content.</strong><br><br>
-            Please check:
-            <ul>
-              <li><code>link.txt</code> exists in <code>md-config</code> repo</li>
-              <li><code>link.txt</code> contains exactly one valid Markdown URL</li>
-              <li>the target Markdown file is public</li>
-            </ul>
+            Check console + debug box shown above.
           </div>
         `;
         console.error(error);
