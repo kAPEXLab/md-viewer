@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Markdown Viewer</title>
 
+  <!-- Marked.js for Markdown parsing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
@@ -15,66 +16,19 @@
       color: #24292f;
     }
 
-    header {
-      background: #0d1117;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-
     .container {
       width: 90%;
       max-width: 1000px;
-      margin: 20px auto;
+      margin: 24px auto;
     }
 
     #content {
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      margin-top: 20px;
-      line-height: 1.7;
+      background: #ffffff;
+      padding: 28px;
+      border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-
-    pre {
-      background: #0d1117;
-      color: #c9d1d9;
-      padding: 12px;
+      line-height: 1.7;
       overflow-x: auto;
-      border-radius: 8px;
-    }
-
-    code {
-      background: #f0f3f6;
-      padding: 2px 5px;
-      border-radius: 4px;
-    }
-
-    pre code {
-      background: transparent;
-      padding: 0;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-
-    table, th, td {
-      border: 1px solid #d0d7de;
-    }
-
-    th, td {
-      padding: 8px 10px;
-      text-align: left;
-    }
-
-    blockquote {
-      border-left: 4px solid #d0d7de;
-      margin-left: 0;
-      padding-left: 16px;
-      color: #57606a;
     }
 
     .message {
@@ -87,80 +41,146 @@
     .error {
       background: #ffebe9;
       border: 1px solid #ff8182;
+      color: #cf222e;
       padding: 14px;
       border-radius: 8px;
-      color: #cf222e;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+      margin-bottom: 0.6em;
+    }
+
+    p {
+      margin: 0.8em 0;
+    }
+
+    pre {
+      background: #0d1117;
+      color: #c9d1d9;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    code {
+      background: #f0f3f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+
+    blockquote {
+      margin: 1em 0;
+      padding-left: 16px;
+      border-left: 4px solid #d0d7de;
+      color: #57606a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+
+    th, td {
+      border: 1px solid #d0d7de;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f6f8fa;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    a {
+      color: #0969da;
     }
   </style>
 </head>
 <body>
-
-<header>
-  <h1>Markdown Viewer</h1>
-</header>
-
-<div class="container">
-  <div id="content">
-    <div class="message">Loading content...</div>
+  <div class="container">
+    <div id="content">
+      <div class="message">Loading content...</div>
+    </div>
   </div>
-</div>
 
-<script>
-  function getQueryParam(name) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(name);
-  }
-
-  function convertToRaw(url) {
-    if (!url) return url;
-
-    if (url.includes("github.com") && url.includes("/blob/")) {
-      return url
-        .replace("https://github.com/", "https://raw.githubusercontent.com/")
-        .replace("/blob/", "/");
-    }
-
-    return url;
-  }
-
-  async function loadMarkdown() {
-    const mdUrl = getQueryParam("md");
+  <script>
     const contentDiv = document.getElementById("content");
 
-    if (!mdUrl) {
-      contentDiv.innerHTML = `
-        <div class="error">
-          No markdown file specified.<br><br>
-          Use URL like:<br>
-          <code>?md=https://raw.githubusercontent.com/USER/REPO/main/README.md</code>
-        </div>
-      `;
-      return;
-    }
+    function convertToRaw(url) {
+      if (!url) return url;
 
-    const rawUrl = convertToRaw(mdUrl);
+      url = url.trim();
 
-    try {
-      const response = await fetch(rawUrl);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch markdown file");
+      if (url.includes("github.com") && url.includes("/blob/")) {
+        return url
+          .replace("https://github.com/", "https://raw.githubusercontent.com/")
+          .replace("/blob/", "/");
       }
 
-      const markdown = await response.text();
-      contentDiv.innerHTML = marked.parse(markdown);
-    } catch (err) {
-      contentDiv.innerHTML = `
-        <div class="error">
-          Error loading markdown content.<br><br>
-          Please verify that the file exists and is publicly accessible.
-        </div>
-      `;
+      return url;
     }
-  }
 
-  loadMarkdown();
-</script>
+    async function loadMarkdownFromLinkFile() {
+      try {
+        // Step 1: Read link.txt from same repo/site
+        const linkResponse = await fetch("./link.txt");
 
+        if (!linkResponse.ok) {
+          throw new Error("Unable to read link.txt");
+        }
+
+        const mdUrlText = await linkResponse.text();
+        const mdUrl = convertToRaw(mdUrlText);
+
+        if (!mdUrl) {
+          throw new Error("link.txt is empty");
+        }
+
+        // Step 2: Fetch markdown file
+        const mdResponse = await fetch(mdUrl);
+
+        if (!mdResponse.ok) {
+          throw new Error("Unable to fetch markdown file");
+        }
+
+        const markdown = await mdResponse.text();
+
+        // Step 3: Render markdown
+        contentDiv.innerHTML = marked.parse(markdown);
+
+        // Optional: use first H1 as page title
+        const match = markdown.match(/^#\s+(.+)$/m);
+        if (match && match[1]) {
+          document.title = match[1].trim();
+        }
+      } catch (error) {
+        contentDiv.innerHTML = `
+          <div class="error">
+            <strong>Error loading content.</strong><br><br>
+            Please check:
+            <ul>
+              <li><code>link.txt</code> exists in the repo root</li>
+              <li><code>link.txt</code> contains exactly one valid Markdown URL</li>
+              <li>the target Markdown file is public</li>
+            </ul>
+          </div>
+        `;
+      }
+    }
+
+    loadMarkdownFromLinkFile();
+  </script>
 </body>
 </html>
